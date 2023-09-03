@@ -2,6 +2,14 @@
 
 I created this bot to send messages via matrix when long running tasks are finished. It is written in python but uses the REST API directly using requests.
 
+## Installation
+
+This package provides a `setup.py` file. You can install it via `pip install .` or `python setup.py install`.
+Doing this without a virtual environment will install the package globally.
+
+If you use `pipx` you can install it via `pipx install .`.
+It should create terminal commands for you to use.
+
 ## Configuration
 
 - homeserver: "https://YOUR_MATRIX_INSTANCE",
