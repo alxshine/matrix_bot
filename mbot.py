@@ -1,3 +1,4 @@
+# %%
 import os
 import requests
 import click
@@ -75,6 +76,41 @@ def generate_config(config_path):
 
 
 # TODO: can I send files as m.image/m.file message types? what's the encoding?
+def upload_file():
+    pass
 
-if __name__ == "__main__":
-    main()
+
+# %%
+import os
+import json
+
+config_path = os.path.expanduser("~/.mbot.json")
+if config_path is None:
+    config = DEFAULT_CONFIG
+else:
+    with open(config_path, "r") as f:
+        config = json.load(f)
+
+with open(os.path.expanduser(config["token_path"]), "r") as f:
+    access_token = f.read().strip()
+
+# %%
+import requests
+
+url = "https://matrix.0303.io/_matrix/media/r0/upload?filename=test.jpg"
+response = requests.post(
+    url,
+    headers={"authorization": f"Bearer {access_token}"},
+    files={"file": open("/home/alex/Downloads/unnecessary.txt", "rb")},
+)
+
+# %%
+json_response = response.json()
+content_uri = json_response["content_uri"]
+
+message_dict = {"body": "unnecessary.txt", "msgtype": "m.file", "url": content_uri}
+
+url = f"{config['homeserver']}/_matrix/client/r0/rooms/{config['room_id']}/send/m.room.message/m_psend{os.getpid()}"
+message_response = requests.put(
+    url, headers={"authorization": f"Bearer {access_token}"}, json=message_dict
+)
