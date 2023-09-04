@@ -2,6 +2,7 @@ import os
 import requests
 import click
 import json
+import sys
 
 
 @click.group()
@@ -60,6 +61,17 @@ def send(message, room_id, config_path, token_path):
         print(
             f"Failed to send message. Status code: {response.status_code}\n{response.text}"
         )
+
+
+@main.command()
+@click.option("--config-path", help="Path to config file", default=None)
+def generate_config(config_path):
+    if config_path is not None:
+        f = open(config_path, "w")
+    else:
+        f = sys.stdout
+
+    json.dump(DEFAULT_CONFIG, f, indent=4)
 
 
 # TODO: can I send files as m.image/m.file message types? what's the encoding?
