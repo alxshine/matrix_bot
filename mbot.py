@@ -63,42 +63,51 @@ def send(message, room_id, config_path, token_path):
         )
 
 
-# TODO: can I send files as m.image/m.file message types? what's the encoding?
-def upload_file():
-    pass
-
-
-# %%
-import os
-import json
-
-config_path = os.path.expanduser("~/.mbot.json")
-if config_path is None:
-    config = DEFAULT_CONFIG
-else:
-    with open(config_path, "r") as f:
-        config = json.load(f)
-
-with open(os.path.expanduser(config["token_path"]), "r") as f:
-    access_token = f.read().strip()
-
-# %%
-import requests
-
-url = "https://matrix.0303.io/_matrix/media/r0/upload?filename=test.jpg"
-response = requests.post(
-    url,
-    headers={"authorization": f"Bearer {access_token}"},
-    files={"file": open("/home/alex/Downloads/unnecessary.txt", "rb")},
+@main.command()
+@click.argument("file_path", type=click.Path(exists=True))
+@click.option(
+    "--room-id",
+    help="Room ID to send message to",
+    default=None,
 )
+@click.option("--config-path", help="Path to config file", default=None)
+@click.option("--token-path", help="Path to token file", default=None)
+def upload(file_path, room_id=None, config_path=None, token_path=None):
+    if config_path is None:
+        config = DEFAULT_CONFIG
+    else:
+        with open(config_path, "r") as f:
+            config = json.load(f)
 
-# %%
-json_response = response.json()
-content_uri = json_response["content_uri"]
+    if room_id is not None:
+        config["room_id"] = room_id
 
-message_dict = {"body": "unnecessary.txt", "msgtype": "m.file", "url": content_uri}
+    if token_path is not None:
+        config["token_path"] = token_path
 
-url = f"{config['homeserver']}/_matrix/client/r0/rooms/{config['room_id']}/send/m.room.message/m_psend{os.getpid()}"
-message_response = requests.put(
-    url, headers={"authorization": f"Bearer {access_token}"}, json=message_dict
-)
+    with open(os.path.expanduser(config["token_path"]), "r") as f:
+        access_token = f.read().strip()
+
+    # upload file
+    filename = os.path.basename(file_path)
+    url = f"{config['homeserver']}/_matrix/media/r0/upload?filename={filename}"
+    response = requests.post(
+        url,
+        headers={"authorization": f"Bearer {access_token}"},
+        files={"file": open(file_path, "rb")},
+    )
+
+    json_response = response.json()
+    content_uri = json_response["content_uri"]
+
+    # send message
+    message_dict = {"body": filename, "msgtype": "m.file", "url": content_uri}
+
+    url = f"{config['homeserver']}/_matrix/client/r0/rooms/{config['room_id']}/send/m.room.message/m{os.getpid()}"
+    message_response = requests.put(
+        url, headers={"authorization": f"Bearer {access_token}"}, json=message_dict
+    )
+
+
+if __name__ == "__main__":
+    main()
